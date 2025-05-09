@@ -108,6 +108,15 @@
                 color: #fff;
                 background-color: #6c757d;
             }
+            .btn-outline-danger {
+                color: #dc3545;
+                border: 1px solid #dc3545;
+                background-color: transparent;
+            }
+            .btn-outline-danger:hover {
+                color: #fff;
+                background-color: #dc3545;
+            }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
               integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
@@ -153,6 +162,9 @@
                                 <button id="refreshCountsBtn" class="btn btn-sm btn-outline-secondary">
                                     <i class="fas fa-sync-alt"></i> Refresh
                                 </button>
+                                <button id="deleteFilesBtn" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash-alt"></i> Delete All
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -179,6 +191,7 @@
                 const imageCountElement = document.getElementById('imageCount');
                 const videoCountElement = document.getElementById('videoCount');
                 const refreshCountsBtn = document.getElementById('refreshCountsBtn');
+                const deleteFilesBtn = document.getElementById('deleteFilesBtn');
                 
                 // Load saved settings and file counts
                 loadSavedSettings();
@@ -186,6 +199,9 @@
                 
                 // Add event listener for refresh counts button
                 refreshCountsBtn.addEventListener('click', updateFileCounts);
+
+                // Add event listener for delete files button
+                deleteFilesBtn.addEventListener('click', deleteAllFiles);
                 
                 // Function to update file counts
                 function updateFileCounts() {
@@ -212,6 +228,24 @@
                             setTimeout(() => {
                                 refreshIcon.classList.remove('fa-spin');
                             }, 500);
+                        });
+                }
+
+                // Function to delete all files
+                function deleteAllFiles() {
+                    fetch('/camera/delete-files', { method: 'DELETE' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showStatusMessage('All files deleted successfully');
+                                updateFileCounts();
+                            } else {
+                                showStatusMessage('Failed to delete files', false);
+                            }
+                        })
+                        .catch(error => {
+                            showStatusMessage('Error deleting files', false);
+                            console.error('Error:', error);
                         });
                 }
                 

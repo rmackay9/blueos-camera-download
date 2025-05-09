@@ -6,6 +6,7 @@ import asyncio
 import sys
 import os
 import re
+import shutil
 from pathlib import Path
 from fastapi import FastAPI, Query
 from fastapi.staticfiles import StaticFiles
@@ -256,6 +257,56 @@ async def count_files() -> Dict[str, Any]:
             "message": f"Error: {str(e)}",
             "images": 0,
             "videos": 0
+        }
+
+@app.get("/camera/delete-files")
+@app.delete("/camera/delete-files")
+async def delete_files() -> Dict[str, Any]:
+    """Delete all files from the downloads directory"""
+    logger.info("Deleting files from downloads directory")
+    
+    try:
+        # Set up download directory
+        current_dir = Path.cwd()
+        downloads_dir = current_dir / "downloads"
+        
+        if not downloads_dir.exists():
+            downloads_dir.mkdir(parents=True, exist_ok=True)
+            return {
+                "success": True,
+                "message": "No files to delete",
+                "deleted_count": 0
+            }
+        
+        # Count files before deletion
+        file_count = 0
+        for item in downloads_dir.iterdir():
+            if item.is_file():
+                file_count += 1
+        
+        if file_count == 0:
+            return {
+                "success": True,
+                "message": "No files to delete",
+                "deleted_count": 0
+            }
+            
+        # Delete all files (but keep the directory)
+        for item in downloads_dir.iterdir():
+            if item.is_file():
+                item.unlink()
+        
+        return {
+            "success": True,
+            "message": f"Successfully deleted {file_count} files",
+            "deleted_count": file_count
+        }
+    except Exception as e:
+        logger.exception(f"Error deleting files: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Error: {str(e)}",
+            "deleted_count": 0
         }
 
 # Mount static files AFTER defining API routes
