@@ -117,6 +117,15 @@
                 color: #fff;
                 background-color: #dc3545;
             }
+            .btn-outline-primary {
+                color: #007bff;
+                border: 1px solid #007bff;
+                background-color: transparent;
+            }
+            .btn-outline-primary:hover {
+                color: #fff;
+                background-color: #007bff;
+            }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
               integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
@@ -162,6 +171,9 @@
                                 <button id="refreshCountsBtn" class="btn btn-sm btn-outline-secondary">
                                     <i class="fas fa-sync-alt"></i> Refresh
                                 </button>
+                                <button id="downloadZipBtn" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-download"></i> Download ZIP
+                                </button>
                                 <button id="deleteFilesBtn" class="btn btn-sm btn-outline-danger">
                                     <i class="fas fa-trash-alt"></i> Delete All
                                 </button>
@@ -192,6 +204,7 @@
                 const videoCountElement = document.getElementById('videoCount');
                 const refreshCountsBtn = document.getElementById('refreshCountsBtn');
                 const deleteFilesBtn = document.getElementById('deleteFilesBtn');
+                const downloadZipBtn = document.getElementById('downloadZipBtn');
                 
                 // Load saved settings and file counts
                 loadSavedSettings();
@@ -202,6 +215,9 @@
 
                 // Add event listener for delete files button
                 deleteFilesBtn.addEventListener('click', deleteAllFiles);
+
+                // Add event listener for download ZIP button
+                downloadZipBtn.addEventListener('click', downloadZip);
                 
                 // Function to update file counts
                 function updateFileCounts() {
@@ -246,6 +262,35 @@
                         .catch(error => {
                             showStatusMessage('Error deleting files', false);
                             console.error('Error:', error);
+                        });
+                }
+
+                // Function to download ZIP
+                function downloadZip() {
+                    // Check if there are any files to download first
+                    fetch('/camera/count-files')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const totalFiles = data.images + data.videos;
+                                if (totalFiles > 0) {
+                                    // There are files available, proceed with download
+                                    const zipUrl = `/camera/download-zip`;
+                                    window.open(zipUrl, '_blank');
+                                } else {
+                                    // No files available, show message in progress log
+                                    progressLog.value = "No files available to download. Please download files from the camera first.\n";
+                                    progressLog.scrollTop = progressLog.scrollHeight;
+                                }
+                            } else {
+                                // Error getting file counts
+                                progressLog.value += `Error: ${data.message}\n`;
+                                progressLog.scrollTop = progressLog.scrollHeight;
+                            }
+                        })
+                        .catch(error => {
+                            progressLog.value += `Error checking for files to download: ${error}\n`;
+                            progressLog.scrollTop = progressLog.scrollHeight;
                         });
                 }
                 
