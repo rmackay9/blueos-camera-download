@@ -55,12 +55,26 @@
                 background-color: #28a745;
                 color: white;
             }
+            .btn-secondary {
+                background-color: #6c757d;
+                color: white;
+            }
             textarea {
                 width: 100%;
                 font-family: monospace;
             }
             .mb-3 {
                 margin-bottom: 15px;
+            }
+            .status-message {
+                margin-top: 5px;
+                font-size: 0.9em;
+                color: #28a745;
+                height: 20px;
+                transition: opacity 1s ease-in-out;
+            }
+            .fade-out {
+                opacity: 0;
             }
         </style>
     </head>
@@ -85,10 +99,12 @@
                         <label for="ipAddress" class="col-form-label">IP Address:</label>
                         <div class="col-sm-9">
                             <input type="text" class="form-control" id="ipAddress" value="192.168.144.25">
+                            <div id="statusMessage" class="status-message"></div>
                         </div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-sm-9" style="margin-left: auto;">
+                            <button id="saveBtn" class="btn btn-secondary">Save Settings</button>
                             <button id="pingBtn" class="btn btn-primary">Ping Camera</button>
                             <button id="downloadBtn" class="btn btn-success">Download Images/Videos</button>
                         </div>
@@ -109,17 +125,97 @@
                 const cameraTypeSelect = document.getElementById('cameraType');
                 const ipAddressInput = document.getElementById('ipAddress');
                 const pingBtn = document.getElementById('pingBtn');
+                const saveBtn = document.getElementById('saveBtn');
                 const downloadBtn = document.getElementById('downloadBtn');
                 const progressLog = document.getElementById('progressLog');
+                const statusMessage = document.getElementById('statusMessage');
+                
+                // Load saved settings
+                loadSavedSettings();
+                
+                function loadSavedSettings() {
+                    fetch('/camera/get-settings')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Set camera type from last used
+                                if (data.last_used && data.last_used.camera_type) {
+                                    cameraTypeSelect.value = data.last_used.camera_type;
+                                }
+                                
+                                // Set IP address from last used
+                                if (data.last_used && data.last_used.ip) {
+                                    ipAddressInput.value = data.last_used.ip;
+                                }
+                                
+                                console.log('Settings loaded successfully');
+                            } else {
+                                console.error('Failed to load settings:', data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading settings:', error);
+                        });
+                }
 
                 // Update IP address when camera type changes
                 cameraTypeSelect.addEventListener('change', function() {
-                    if (this.value === 'siyi') {
-                        ipAddressInput.value = '192.168.144.25';
-                    } else if (this.value === 'xfrobot') {
-                        ipAddressInput.value = '192.168.144.108';
-                    }
+                    // Get IP address for selected camera type
+                    fetch('/camera/get-settings')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.cameras) {
+                                const cameraType = cameraTypeSelect.value;
+                                const cameraData = data.cameras[cameraType];
+                                
+                                if (cameraData && cameraData.ip) {
+                                    ipAddressInput.value = cameraData.ip;
+                                } else {
+                                    // Set default values if no saved values
+                                    if (cameraType === 'siyi') {
+                                        ipAddressInput.value = '192.168.144.25';
+                                    } else if (cameraType === 'xfrobot') {
+                                        ipAddressInput.value = '192.168.144.108';
+                                    }
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching camera settings:', error);
+                        });
                 });
+                
+                // Save settings
+                saveBtn.addEventListener('click', function() {
+                    const cameraType = cameraTypeSelect.value;
+                    const ipAddress = ipAddressInput.value;
+                    
+                    fetch(`/camera/save-settings?type=${cameraType}&ip=${ipAddress}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showStatusMessage('Settings saved successfully');
+                            } else {
+                                showStatusMessage('Failed to save settings', false);
+                            }
+                        })
+                        .catch(error => {
+                            showStatusMessage('Error saving settings', false);
+                            console.error('Error:', error);
+                        });
+                });
+                
+                // Show status message with auto-fade
+                function showStatusMessage(message, isSuccess = true) {
+                    statusMessage.textContent = message;
+                    statusMessage.style.color = isSuccess ? '#28a745' : '#dc3545';
+                    statusMessage.classList.remove('fade-out');
+                    
+                    // Fade out after 3 seconds
+                    setTimeout(() => {
+                        statusMessage.classList.add('fade-out');
+                    }, 3000);
+                }
 
                 // Ping camera
                 pingBtn.addEventListener('click', function() {

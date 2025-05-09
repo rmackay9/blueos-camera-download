@@ -10,6 +10,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, StreamingResponse
 from typing import Dict, List, Any, Optional
 
+# Import the settings module
+from app import settings
+
 # Configure console logging
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setLevel(logging.DEBUG)
@@ -60,9 +63,49 @@ async def ping_camera(ip: str) -> Dict[str, Any]:
     is_reachable, message = is_camera_reachable(ip)
     return {"success": is_reachable, "message": message}
 
+@app.get("/camera/save-settings")
+async def save_camera_settings(type: str, ip: str) -> Dict[str, Any]:
+    """Save camera settings to persistent storage"""
+    logger.info(f"Saving camera settings: type={type}, ip={ip}")
+    success = settings.update_camera_ip(type, ip)
+    
+    if success:
+        return {"success": True, "message": f"Camera settings saved for {type}"}
+    else:
+        return {"success": False, "message": "Failed to save camera settings"}
+
+@app.get("/camera/get-settings")
+async def get_camera_settings() -> Dict[str, Any]:
+    """Get saved camera settings"""
+    logger.info("Getting camera settings")
+    
+    try:
+        # Get the last used camera settings
+        last_used = settings.get_last_used()
+        
+        # Get IP addresses for both camera types
+        siyi_ip = settings.get_camera_ip('siyi')
+        xfrobot_ip = settings.get_camera_ip('xfrobot')
+        
+        return {
+            "success": True,
+            "last_used": last_used,
+            "cameras": {
+                "siyi": {"ip": siyi_ip},
+                "xfrobot": {"ip": xfrobot_ip}
+            }
+        }
+    except Exception as e:
+        logger.exception(f"Error getting camera settings: {str(e)}")
+        return {"success": False, "message": f"Error: {str(e)}"}
+
 async def download_generator(type: str, ip: str):
     """Generator function for streaming download progress"""
     logger.info(f"Download request received for {type} camera at {ip}")
+    
+    # Save the camera settings when a download is requested
+    settings.update_camera_ip(type, ip)
+    
     # Correct SSE format with "data:" prefix and double newline
     yield f"data: Connecting to camera at {ip}\n\n"
 
