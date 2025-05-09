@@ -79,7 +79,39 @@
             .fade-out {
                 opacity: 0;
             }
+            .badge {
+                display: inline-block;
+                padding: 0.4em 0.7em;
+                font-size: 0.9em;
+                font-weight: 700;
+                border-radius: 0.25rem;
+                margin-right: 10px;
+            }
+            .badge-info {
+                color: #fff;
+                background-color: #17a2b8;
+            }
+            .file-counts {
+                display: flex;
+                align-items: center;
+            }
+            .btn-sm {
+                padding: 4px 8px;
+                font-size: 0.875rem;
+            }
+            .btn-outline-secondary {
+                color: #6c757d;
+                border: 1px solid #6c757d;
+                background-color: transparent;
+            }
+            .btn-outline-secondary:hover {
+                color: #fff;
+                background-color: #6c757d;
+            }
         </style>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+              integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
+              crossorigin="anonymous" referrerpolicy="no-referrer" />
     </head>
     <body>
         <div class="container">
@@ -113,6 +145,18 @@
                         </div>
                     </div>
                     <div class="row mb-3">
+                        <label class="col-form-label">Downloaded Files:</label>
+                        <div class="col-sm-9">
+                            <div class="file-counts">
+                                <span id="imageCount" class="badge badge-info">0 Images</span>
+                                <span id="videoCount" class="badge badge-info">0 Videos</span>
+                                <button id="refreshCountsBtn" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
                         <label for="progressLog" class="col-form-label">Progress:</label>
                         <div class="col-sm-9">
                             <textarea id="progressLog" class="form-control" rows="10" readonly></textarea>
@@ -132,9 +176,44 @@
                 const downloadBtn = document.getElementById('downloadBtn');
                 const progressLog = document.getElementById('progressLog');
                 const statusMessage = document.getElementById('statusMessage');
+                const imageCountElement = document.getElementById('imageCount');
+                const videoCountElement = document.getElementById('videoCount');
+                const refreshCountsBtn = document.getElementById('refreshCountsBtn');
                 
-                // Load saved settings
+                // Load saved settings and file counts
                 loadSavedSettings();
+                updateFileCounts();
+                
+                // Add event listener for refresh counts button
+                refreshCountsBtn.addEventListener('click', updateFileCounts);
+                
+                // Function to update file counts
+                function updateFileCounts() {
+                    // Add spin animation to refresh button
+                    const refreshIcon = refreshCountsBtn.querySelector('i');
+                    refreshIcon.classList.add('fa-spin');
+                    
+                    fetch('/camera/count-files')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Update the file count displays
+                                imageCountElement.textContent = `${data.images} Images`;
+                                videoCountElement.textContent = `${data.videos} Videos`;
+                            } else {
+                                console.error('Failed to get file counts:', data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error getting file counts:', error);
+                        })
+                        .finally(() => {
+                            // Remove spin animation
+                            setTimeout(() => {
+                                refreshIcon.classList.remove('fa-spin');
+                            }, 500);
+                        });
+                }
                 
                 function loadSavedSettings() {
                     fetch('/camera/get-settings')
@@ -286,6 +365,9 @@
                             downloadCompleted = true;
                             window.eventSource.close();
                             connectionClosed = true;
+                            
+                            // Update file counts after successful download
+                            setTimeout(updateFileCounts, 1000);
                         }
 
                         // Handle error messages and close connection

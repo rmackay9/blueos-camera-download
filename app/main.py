@@ -4,6 +4,8 @@ import logging.handlers
 import subprocess
 import asyncio
 import sys
+import os
+import re
 from pathlib import Path
 from fastapi import FastAPI, Query
 from fastapi.staticfiles import StaticFiles
@@ -208,6 +210,53 @@ async def download_images(type: str, ip: str):
         download_generator(type, ip),
         media_type="text/event-stream"
     )
+
+@app.get("/camera/count-files")
+async def count_files() -> Dict[str, Any]:
+    """Count the number of image and video files in the downloads directory"""
+    logger.info("Counting files in downloads directory")
+    
+    try:
+        # Set up download directory
+        current_dir = Path.cwd()
+        downloads_dir = current_dir / "downloads"
+        
+        if not downloads_dir.exists():
+            return {
+                "success": True,
+                "images": 0,
+                "videos": 0
+            }
+        
+        # Count files by extension
+        image_count = 0
+        video_count = 0
+        
+        # Common image and video extensions
+        image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff']
+        video_extensions = ['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv']
+        
+        for file in downloads_dir.iterdir():
+            if file.is_file():
+                lower_name = file.name.lower()
+                if any(lower_name.endswith(ext) for ext in image_extensions):
+                    image_count += 1
+                elif any(lower_name.endswith(ext) for ext in video_extensions):
+                    video_count += 1
+        
+        return {
+            "success": True,
+            "images": image_count,
+            "videos": video_count
+        }
+    except Exception as e:
+        logger.exception(f"Error counting files: {str(e)}")
+        return {
+            "success": False,
+            "message": f"Error: {str(e)}",
+            "images": 0,
+            "videos": 0
+        }
 
 # Mount static files AFTER defining API routes
 # Use absolute path to handle Docker container environment
