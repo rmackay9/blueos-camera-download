@@ -1,0 +1,222 @@
+<html>
+    <head>
+        <title>Camera Download</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+            }
+            .card {
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }
+            .card-header {
+                background-color: #f8f9fa;
+                padding: 10px 15px;
+                border-bottom: 1px solid #ccc;
+            }
+            .card-body {
+                padding: 15px;
+            }
+            .row {
+                display: flex;
+                margin-bottom: 10px;
+            }
+            .col-form-label {
+                flex: 0 0 30%;
+            }
+            .col-sm-9 {
+                flex: 0 0 70%;
+            }
+            .form-control, .form-select {
+                width: 100%;
+                padding: 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+            .btn {
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                border: none;
+                margin-right: 5px;
+            }
+            .btn-primary {
+                background-color: #007bff;
+                color: white;
+            }
+            .btn-success {
+                background-color: #28a745;
+                color: white;
+            }
+            textarea {
+                width: 100%;
+                font-family: monospace;
+            }
+            .mb-3 {
+                margin-bottom: 15px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Camera Download</h1>
+            <div class="card">
+                <div class="card-header">
+                    <h2>Camera Management</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <label for="cameraType" class="col-form-label">Camera Type:</label>
+                        <div class="col-sm-9">
+                            <select class="form-select" id="cameraType">
+                                <option value="siyi">Siyi</option>
+                                <option value="xfrobot">XFRobot</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="ipAddress" class="col-form-label">IP Address:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" id="ipAddress" value="192.168.144.25">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-9" style="margin-left: auto;">
+                            <button id="pingBtn" class="btn btn-primary">Ping Camera</button>
+                            <button id="downloadBtn" class="btn btn-success">Download Images/Videos</button>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="progressLog" class="col-form-label">Progress:</label>
+                        <div class="col-sm-9">
+                            <textarea id="progressLog" class="form-control" rows="10" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Camera management logic
+            document.addEventListener('DOMContentLoaded', function() {
+                const cameraTypeSelect = document.getElementById('cameraType');
+                const ipAddressInput = document.getElementById('ipAddress');
+                const pingBtn = document.getElementById('pingBtn');
+                const downloadBtn = document.getElementById('downloadBtn');
+                const progressLog = document.getElementById('progressLog');
+
+                // Update IP address when camera type changes
+                cameraTypeSelect.addEventListener('change', function() {
+                    if (this.value === 'siyi') {
+                        ipAddressInput.value = '192.168.144.25';
+                    } else if (this.value === 'xfrobot') {
+                        ipAddressInput.value = '192.168.144.108';
+                    }
+                });
+
+                // Ping camera
+                pingBtn.addEventListener('click', function() {
+                    progressLog.value = 'Pinging camera...\n';
+                    fetch(`/camera/ping?ip=${ipAddressInput.value}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            progressLog.value += data.message + '\n';
+                        })
+                        .catch(error => {
+                            progressLog.value += `Error: ${error}\n`;
+                        });
+                });
+
+                // Download images/videos
+                downloadBtn.addEventListener('click', function() {
+                    const cameraType = cameraTypeSelect.value;
+                    const ipAddress = ipAddressInput.value;
+
+                    console.log(`Download button clicked for ${cameraType} camera at ${ipAddress}`);
+                    progressLog.value = `Starting download from ${cameraType} camera at ${ipAddress}\n`;
+
+                    // Setup event source for progress updates
+                    if (window.eventSource) {
+                        console.log("Closing existing EventSource connection");
+                        window.eventSource.close();
+                    }
+
+                    // Track connection state
+                    let downloadStarted = false;
+                    let downloadCompleted = false;
+                    let lastHeartbeat = Date.now();
+                    let connectionClosed = false;
+
+                    const eventSourceUrl = `/camera/download?type=${cameraType}&ip=${ipAddress}`;
+                    console.log(`Opening EventSource connection to: ${eventSourceUrl}`);
+
+                    // Create a new EventSource instance
+                    window.eventSource = new EventSource(eventSourceUrl);
+
+                    // Handle open event
+                    window.eventSource.onopen = function() {
+                        console.log("EventSource connection opened successfully");
+                    };
+
+                    // Handle messages from the server
+                    window.eventSource.onmessage = function(event) {
+                        console.log(`Received message: ${event.data}`);
+                        lastHeartbeat = Date.now();
+                        
+                        // Don't need to check for heartbeats as they're handled automatically by the browser
+                        // The browser only triggers onmessage for "data:" lines
+                        
+                        // Append message to progress log
+                        progressLog.value += event.data + '\n';
+                        progressLog.scrollTop = progressLog.scrollHeight;
+
+                        // Mark as started once we receive the first message containing "Started"
+                        if (event.data.toLowerCase().includes("started")) {
+                            downloadStarted = true;
+                        }
+
+                        // Handle completion and close connection
+                        if (event.data.toLowerCase().includes("completed successfully")) {
+                            downloadCompleted = true;
+                            window.eventSource.close();
+                            connectionClosed = true;
+                        }
+
+                        // Handle error messages and close connection
+                        if (event.data.toLowerCase().includes("error")) {
+                            window.eventSource.close();
+                            connectionClosed = true;
+                        }
+                    };
+
+                    // Handle error events
+                    window.eventSource.onerror = function(event) {
+                        console.error("EventSource error:", event);
+                        
+                        // Only show error if we haven't already marked the connection as intentionally closed
+                        if (!connectionClosed) {
+                            if (downloadCompleted) {
+                                progressLog.value += "Connection closed after successful download.\n";
+                            } else if (downloadStarted) {
+                                progressLog.value += "Connection closed but download is continuing in the background.\n";
+                                progressLog.value += "Check the downloads folder for your files.\n";
+                            } else {
+                                progressLog.value += "Error: Connection to server closed unexpectedly.\n";
+                                progressLog.value += `Could not connect to camera at ${ipAddress}. Please check the connection and try again.\n`;
+                            }
+                        }
+                        
+                        window.eventSource.close();
+                    };
+                });
+            });
+        </script>
+    </body>
+</html>
