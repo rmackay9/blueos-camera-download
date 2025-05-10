@@ -30,7 +30,7 @@ def get_settings():
     """
     Load settings from the settings file.
     Creates default settings file if it doesn't exist.
-    
+
     Returns:
         dict: The settings dictionary
     """
@@ -39,7 +39,7 @@ def get_settings():
             logger.info(f"Settings file not found, creating default at {SETTINGS_FILE}")
             save_settings(DEFAULT_SETTINGS)
             return DEFAULT_SETTINGS
-        
+
         with open(SETTINGS_FILE, 'r') as f:
             settings = json.load(f)
             logger.debug(f"Loaded settings: {settings}")
@@ -71,33 +71,33 @@ def save_settings(settings):
             logger.debug(f"Saved settings: {settings}")
     except Exception as e:
         logger.error(f"Error saving settings: {e}")
-        
+
 def update_camera_ip(camera_type, ip):
     """
     Update the IP address for a specific camera type
-    
+
     Args:
         camera_type (str): The camera type ("siyi" or "xfrobot")
         ip (str): The IP address
-        
+
     Returns:
         bool: True if successful, False otherwise
     """
     try:
         settings = get_settings()
-        
+
         # Update camera IP
         if camera_type not in settings['cameras']:
             settings['cameras'][camera_type] = {}
-        
+
         settings['cameras'][camera_type]['ip'] = ip
-        
+
         # Update last used settings
         settings['last_used'] = {
             'camera_type': camera_type,
             'ip': ip
         }
-        
+
         save_settings(settings)
         return True
     except Exception as e:
@@ -107,19 +107,19 @@ def update_camera_ip(camera_type, ip):
 def get_camera_ip(camera_type):
     """
     Get the saved IP address for a camera type
-    
+
     Args:
         camera_type (str): The camera type ("siyi" or "xfrobot")
-        
+
     Returns:
         str: The saved IP address or default if not found
     """
     settings = get_settings()
-    
+
     # Check if camera type exists in settings
     if camera_type in settings['cameras'] and 'ip' in settings['cameras'][camera_type]:
         return settings['cameras'][camera_type]['ip']
-    
+
     # Return default IP if not found
     if camera_type == 'siyi':
         return DEFAULT_SETTINGS['cameras']['siyi']['ip']
@@ -129,7 +129,7 @@ def get_camera_ip(camera_type):
 def get_last_used():
     """
     Get the last used camera type and IP
-    
+
     Returns:
         dict: Dictionary with camera_type and ip
     """
