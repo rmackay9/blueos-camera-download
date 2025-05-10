@@ -1,7 +1,7 @@
 {
     "name": "BlueOS Camera Download Extension",
     "description": "BlueOS Extension to download images and videos from camera gimbals connected via Ethernet.",
-    "icon": "mdi-sail-boat",
+    "icon": "mdi-camera-flip",
     "company": "ArduPilot",
     "version": "0.0.1",
     "new_page": true,
