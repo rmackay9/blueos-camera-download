@@ -1,0 +1,482 @@
+<html>
+    <head>
+        <title>Camera Download</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+            }
+            .container {
+                max-width: 800px;
+                margin: 0 auto;
+            }
+            .card {
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }
+            .card-header {
+                background-color: #f8f9fa;
+                padding: 10px 15px;
+                border-bottom: 1px solid #ccc;
+            }
+            .card-body {
+                padding: 15px;
+            }
+            .row {
+                display: flex;
+                margin-bottom: 10px;
+            }
+            .col-form-label {
+                flex: 0 0 30%;
+            }
+            .col-sm-9 {
+                flex: 0 0 70%;
+            }
+            .form-control, .form-select {
+                width: 100%;
+                padding: 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+            .btn {
+                padding: 8px 16px;
+                border-radius: 4px;
+                cursor: pointer;
+                border: none;
+                margin-right: 5px;
+            }
+            .btn-primary {
+                background-color: #007bff;
+                color: white;
+            }
+            .btn-success {
+                background-color: #28a745;
+                color: white;
+            }
+            .btn-secondary {
+                background-color: #6c757d;
+                color: white;
+            }
+            textarea {
+                width: 100%;
+                font-family: monospace;
+                resize: vertical; /* Allow vertical resizing only, prevent horizontal resizing */
+                max-width: 100%; /* Ensure textarea doesn't exceed its container */
+                box-sizing: border-box; /* Include padding and border in the element's width */
+            }
+            .mb-3 {
+                margin-bottom: 15px;
+            }
+            .status-message {
+                margin-top: 5px;
+                font-size: 0.9em;
+                color: #28a745;
+                height: 20px;
+                transition: opacity 1s ease-in-out;
+            }
+            .fade-out {
+                opacity: 0;
+            }
+            .badge {
+                display: inline-block;
+                padding: 0.4em 0.7em;
+                font-size: 0.9em;
+                font-weight: 700;
+                border-radius: 0.25rem;
+                margin-right: 10px;
+            }
+            .badge-info {
+                color: #fff;
+                background-color: #17a2b8;
+            }
+            .file-counts {
+                display: flex;
+                align-items: center;
+            }
+            .btn-sm {
+                padding: 4px 8px;
+                font-size: 0.875rem;
+            }
+            .btn-outline-secondary {
+                color: #6c757d;
+                border: 1px solid #6c757d;
+                background-color: transparent;
+            }
+            .btn-outline-secondary:hover {
+                color: #fff;
+                background-color: #6c757d;
+            }
+            .btn-outline-danger {
+                color: #dc3545;
+                border: 1px solid #dc3545;
+                background-color: transparent;
+            }
+            .btn-outline-danger:hover {
+                color: #fff;
+                background-color: #dc3545;
+            }
+            .btn-outline-primary {
+                color: #007bff;
+                border: 1px solid #007bff;
+                background-color: transparent;
+            }
+            .btn-outline-primary:hover {
+                color: #fff;
+                background-color: #007bff;
+            }
+        </style>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+              integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
+              crossorigin="anonymous" referrerpolicy="no-referrer" />
+    </head>
+    <body>
+        <div class="container">
+            <h1>Camera Download</h1>
+            <div class="card">
+                <div class="card-header">
+                    <h2>Camera Management</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <label for="cameraType" class="col-form-label">Camera Type:</label>
+                        <div class="col-sm-9">
+                            <select class="form-select" id="cameraType">
+                                <option value="siyi">Siyi</option>
+                                <option value="xfrobot">XFRobot</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="ipAddress" class="col-form-label">IP Address:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control" id="ipAddress" value="192.168.144.25">
+                            <div id="statusMessage" class="status-message"></div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-9" style="margin-left: auto;">
+                            <button id="saveBtn" class="btn btn-secondary">Save Settings</button>
+                            <button id="pingBtn" class="btn btn-primary">Ping Camera</button>
+                            <button id="downloadBtn" class="btn btn-success">Download Images/Videos</button>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-form-label">Downloaded Files:</label>
+                        <div class="col-sm-9">
+                            <div class="file-counts">
+                                <span id="imageCount" class="badge badge-info">0 Images</span>
+                                <span id="videoCount" class="badge badge-info">0 Videos</span>
+                                <button id="refreshCountsBtn" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                                <button id="downloadZipBtn" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-download"></i> Download ZIP
+                                </button>
+                                <button id="deleteFilesBtn" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash-alt"></i> Delete All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="progressLog" class="col-form-label">Progress:</label>
+                        <div class="col-sm-9">
+                            <textarea id="progressLog" class="form-control" rows="10" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Camera management logic
+            document.addEventListener('DOMContentLoaded', function() {
+                const cameraTypeSelect = document.getElementById('cameraType');
+                const ipAddressInput = document.getElementById('ipAddress');
+                const pingBtn = document.getElementById('pingBtn');
+                const saveBtn = document.getElementById('saveBtn');
+                const downloadBtn = document.getElementById('downloadBtn');
+                const progressLog = document.getElementById('progressLog');
+                const statusMessage = document.getElementById('statusMessage');
+                const imageCountElement = document.getElementById('imageCount');
+                const videoCountElement = document.getElementById('videoCount');
+                const refreshCountsBtn = document.getElementById('refreshCountsBtn');
+                const deleteFilesBtn = document.getElementById('deleteFilesBtn');
+                const downloadZipBtn = document.getElementById('downloadZipBtn');
+                
+                // Load saved settings and file counts
+                loadSavedSettings();
+                updateFileCounts();
+                
+                // Add event listener for refresh counts button
+                refreshCountsBtn.addEventListener('click', updateFileCounts);
+
+                // Add event listener for delete files button
+                deleteFilesBtn.addEventListener('click', deleteAllFiles);
+
+                // Add event listener for download ZIP button
+                downloadZipBtn.addEventListener('click', downloadZip);
+                
+                // Function to update file counts
+                function updateFileCounts() {
+                    // Add spin animation to refresh button
+                    const refreshIcon = refreshCountsBtn.querySelector('i');
+                    refreshIcon.classList.add('fa-spin');
+                    
+                    fetch('/camera/count-files')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Update the file count displays
+                                imageCountElement.textContent = `${data.images} Images`;
+                                videoCountElement.textContent = `${data.videos} Videos`;
+                            } else {
+                                console.error('Failed to get file counts:', data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error getting file counts:', error);
+                        })
+                        .finally(() => {
+                            // Remove spin animation
+                            setTimeout(() => {
+                                refreshIcon.classList.remove('fa-spin');
+                            }, 500);
+                        });
+                }
+
+                // Function to delete all files
+                function deleteAllFiles() {
+                    fetch('/camera/delete-files', { method: 'DELETE' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showStatusMessage('All files deleted successfully');
+                                updateFileCounts();
+                            } else {
+                                showStatusMessage('Failed to delete files', false);
+                            }
+                        })
+                        .catch(error => {
+                            showStatusMessage('Error deleting files', false);
+                            console.error('Error:', error);
+                        });
+                }
+
+                // Function to download ZIP
+                function downloadZip() {
+                    // Check if there are any files to download first
+                    fetch('/camera/count-files')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const totalFiles = data.images + data.videos;
+                                if (totalFiles > 0) {
+                                    // There are files available, proceed with download
+                                    const zipUrl = `/camera/download-zip`;
+                                    window.open(zipUrl, '_blank');
+                                } else {
+                                    // No files available, show message in progress log
+                                    progressLog.value = "No files available to download. Please download files from the camera first.\n";
+                                    progressLog.scrollTop = progressLog.scrollHeight;
+                                }
+                            } else {
+                                // Error getting file counts
+                                progressLog.value += `Error: ${data.message}\n`;
+                                progressLog.scrollTop = progressLog.scrollHeight;
+                            }
+                        })
+                        .catch(error => {
+                            progressLog.value += `Error checking for files to download: ${error}\n`;
+                            progressLog.scrollTop = progressLog.scrollHeight;
+                        });
+                }
+                
+                function loadSavedSettings() {
+                    fetch('/camera/get-settings')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Set camera type from last used
+                                if (data.last_used && data.last_used.camera_type) {
+                                    cameraTypeSelect.value = data.last_used.camera_type;
+                                }
+                                
+                                // Set IP address from last used
+                                if (data.last_used && data.last_used.ip) {
+                                    ipAddressInput.value = data.last_used.ip;
+                                }
+                                
+                                console.log('Settings loaded successfully');
+                            } else {
+                                console.error('Failed to load settings:', data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error loading settings:', error);
+                        });
+                }
+
+                // Update IP address when camera type changes
+                cameraTypeSelect.addEventListener('change', function() {
+                    // Get IP address for selected camera type
+                    fetch('/camera/get-settings')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.cameras) {
+                                const cameraType = cameraTypeSelect.value;
+                                const cameraData = data.cameras[cameraType];
+                                
+                                if (cameraData && cameraData.ip) {
+                                    ipAddressInput.value = cameraData.ip;
+                                } else {
+                                    // Set default values if no saved values
+                                    if (cameraType === 'siyi') {
+                                        ipAddressInput.value = '192.168.144.25';
+                                    } else if (cameraType === 'xfrobot') {
+                                        ipAddressInput.value = '192.168.144.108';
+                                    }
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching camera settings:', error);
+                        });
+                });
+                
+                // Save settings
+                saveBtn.addEventListener('click', function() {
+                    const cameraType = cameraTypeSelect.value;
+                    const ipAddress = ipAddressInput.value;
+                    
+                    fetch(`/camera/save-settings?type=${cameraType}&ip=${ipAddress}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showStatusMessage('Settings saved successfully');
+                            } else {
+                                showStatusMessage('Failed to save settings', false);
+                            }
+                        })
+                        .catch(error => {
+                            showStatusMessage('Error saving settings', false);
+                            console.error('Error:', error);
+                        });
+                });
+                
+                // Show status message with auto-fade
+                function showStatusMessage(message, isSuccess = true) {
+                    statusMessage.textContent = message;
+                    statusMessage.style.color = isSuccess ? '#28a745' : '#dc3545';
+                    statusMessage.classList.remove('fade-out');
+                    
+                    // Fade out after 3 seconds
+                    setTimeout(() => {
+                        statusMessage.classList.add('fade-out');
+                    }, 3000);
+                }
+
+                // Ping camera
+                pingBtn.addEventListener('click', function() {
+                    progressLog.value = 'Pinging camera...\n';
+                    fetch(`/camera/ping?ip=${ipAddressInput.value}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            progressLog.value += data.message + '\n';
+                        })
+                        .catch(error => {
+                            progressLog.value += `Error: ${error}\n`;
+                        });
+                });
+
+                // Download images/videos
+                downloadBtn.addEventListener('click', function() {
+                    const cameraType = cameraTypeSelect.value;
+                    const ipAddress = ipAddressInput.value;
+
+                    console.log(`Download button clicked for ${cameraType} camera at ${ipAddress}`);
+                    progressLog.value = `Starting download from ${cameraType} camera at ${ipAddress}\n`;
+
+                    // Setup event source for progress updates
+                    if (window.eventSource) {
+                        console.log("Closing existing EventSource connection");
+                        window.eventSource.close();
+                    }
+
+                    // Track connection state
+                    let downloadStarted = false;
+                    let downloadCompleted = false;
+                    let lastHeartbeat = Date.now();
+                    let connectionClosed = false;
+
+                    const eventSourceUrl = `/camera/download?type=${cameraType}&ip=${ipAddress}`;
+                    console.log(`Opening EventSource connection to: ${eventSourceUrl}`);
+
+                    // Create a new EventSource instance
+                    window.eventSource = new EventSource(eventSourceUrl);
+
+                    // Handle open event
+                    window.eventSource.onopen = function() {
+                        console.log("EventSource connection opened successfully");
+                    };
+
+                    // Handle messages from the server
+                    window.eventSource.onmessage = function(event) {
+                        console.log(`Received message: ${event.data}`);
+                        lastHeartbeat = Date.now();
+                        
+                        // Don't need to check for heartbeats as they're handled automatically by the browser
+                        // The browser only triggers onmessage for "data:" lines
+                        
+                        // Append message to progress log
+                        progressLog.value += event.data + '\n';
+                        progressLog.scrollTop = progressLog.scrollHeight;
+
+                        // Mark as started once we receive the first message containing "Started"
+                        if (event.data.toLowerCase().includes("started")) {
+                            downloadStarted = true;
+                        }
+
+                        // Handle completion and close connection
+                        if (event.data.toLowerCase().includes("completed successfully")) {
+                            downloadCompleted = true;
+                            window.eventSource.close();
+                            connectionClosed = true;
+                            
+                            // Update file counts after successful download
+                            setTimeout(updateFileCounts, 1000);
+                        }
+
+                        // Handle error messages and close connection
+                        if (event.data.toLowerCase().includes("error")) {
+                            window.eventSource.close();
+                            connectionClosed = true;
+                        }
+                    };
+
+                    // Handle error events
+                    window.eventSource.onerror = function(event) {
+                        console.error("EventSource error:", event);
+                        
+                        // Only show error if we haven't already marked the connection as intentionally closed
+                        if (!connectionClosed) {
+                            if (downloadCompleted) {
+                                progressLog.value += "Connection closed after successful download.\n";
+                            } else if (downloadStarted) {
+                                progressLog.value += "Connection closed but download is continuing in the background.\n";
+                                progressLog.value += "Check the downloads folder for your files.\n";
+                            } else {
+                                progressLog.value += "Error: Connection to server closed unexpectedly.\n";
+                                progressLog.value += `Could not connect to camera at ${ipAddress}. Please check the connection and try again.\n`;
+                            }
+                        }
+                        
+                        window.eventSource.close();
+                    };
+                });
+            });
+        </script>
+    </body>
+</html>
