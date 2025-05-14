@@ -1,0 +1,10 @@
+{
+    "name": "Camera Download",
+    "description": "BlueOS Extension to download images and videos from camera gimbals connected via Ethernet.",
+    "icon": "mdi-camera-flip",
+    "company": "ArduPilot",
+    "version": "0.0.1",
+    "new_page": false,
+    "webpage": "https://github.com/rmackay9/blueos-camera-download",
+    "api": ""
+}
