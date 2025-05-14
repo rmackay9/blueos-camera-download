@@ -19,6 +19,9 @@ from typing import Dict, List, Any, Optional
 # Import the settings module
 from app import settings
 
+# Define the downloads directory path
+DOWNLOADS_DIR = Path("/app/downloads")
+
 # Configure console logging
 console_handler = logging.StreamHandler(sys.stdout)
 console_handler.setLevel(logging.DEBUG)
@@ -31,6 +34,10 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(console_handler)
 
 app = FastAPI()
+
+# Ensure downloads directory exists
+DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
+logger.info(f"Downloads directory set up at {DOWNLOADS_DIR}")
 
 # Helper function to check if camera is reachable
 def is_camera_reachable(ip: str) -> tuple[bool, str]:
@@ -124,9 +131,7 @@ async def download_generator(type: str, ip: str):
             return
 
         # Set up download directory
-        current_dir = Path.cwd()
-        downloads_dir = current_dir / "downloads"
-        downloads_dir.mkdir(parents=True, exist_ok=True)
+        DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
         # Get script path
         script_dir = Path(__file__).parent
@@ -138,12 +143,12 @@ async def download_generator(type: str, ip: str):
             return
 
         # Build command
-        cmd = f"python3 {script_path} --ipaddr {ip} --dest {downloads_dir}"
+        cmd = f"python3 {script_path} --ipaddr {ip} --dest {DOWNLOADS_DIR}"
 
         # display download started message
         yield f"data: Started download from {type} camera at {ip}\n\n"
         yield f"data: This may take a while depending on the number of files...\n\n"
-        yield f"data: Files will be saved to: {downloads_dir}\n\n"
+        yield f"data: Files will be saved to: {DOWNLOADS_DIR}\n\n"
 
         # Execute command
         process = await asyncio.create_subprocess_shell(
@@ -194,7 +199,7 @@ async def download_generator(type: str, ip: str):
         # Check result
         if process.returncode == 0:
             yield "data: Download completed successfully!\n\n"
-            yield f"data: Files have been downloaded to: {downloads_dir}\n\n"
+            yield f"data: Files have been downloaded to: {DOWNLOADS_DIR}\n\n"
         else:
             error = await process.stderr.read()
             error_text = error.decode('utf-8')
@@ -221,11 +226,7 @@ async def count_files() -> Dict[str, Any]:
     logger.info("Counting files in downloads directory")
     
     try:
-        # Set up download directory
-        current_dir = Path.cwd()
-        downloads_dir = current_dir / "downloads"
-        
-        if not downloads_dir.exists():
+        if not DOWNLOADS_DIR.exists():
             return {
                 "success": True,
                 "images": 0,
@@ -240,7 +241,7 @@ async def count_files() -> Dict[str, Any]:
         image_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff']
         video_extensions = ['.mp4', '.mov', '.avi', '.mkv', '.wmv', '.flv']
         
-        for file in downloads_dir.iterdir():
+        for file in DOWNLOADS_DIR.iterdir():
             if file.is_file():
                 lower_name = file.name.lower()
                 if any(lower_name.endswith(ext) for ext in image_extensions):
@@ -269,12 +270,8 @@ async def delete_files() -> Dict[str, Any]:
     logger.info("Deleting files from downloads directory")
     
     try:
-        # Set up download directory
-        current_dir = Path.cwd()
-        downloads_dir = current_dir / "downloads"
-        
-        if not downloads_dir.exists():
-            downloads_dir.mkdir(parents=True, exist_ok=True)
+        if not DOWNLOADS_DIR.exists():
+            DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
             return {
                 "success": True,
                 "message": "No files to delete",
@@ -283,7 +280,7 @@ async def delete_files() -> Dict[str, Any]:
         
         # Count files before deletion
         file_count = 0
-        for item in downloads_dir.iterdir():
+        for item in DOWNLOADS_DIR.iterdir():
             if item.is_file():
                 file_count += 1
         
@@ -295,7 +292,7 @@ async def delete_files() -> Dict[str, Any]:
             }
             
         # Delete all files (but keep the directory)
-        for item in downloads_dir.iterdir():
+        for item in DOWNLOADS_DIR.iterdir():
             if item.is_file():
                 item.unlink()
         
@@ -318,11 +315,7 @@ async def download_zip():
     logger.info("Creating ZIP archive of all downloaded files")
     
     try:
-        # Set up download directory
-        current_dir = Path.cwd()
-        downloads_dir = current_dir / "downloads"
-        
-        if not downloads_dir.exists() or not any(downloads_dir.iterdir()):
+        if not DOWNLOADS_DIR.exists() or not any(DOWNLOADS_DIR.iterdir()):
             return JSONResponse(
                 status_code=404,
                 content={"success": False, "message": "No files available to download"}
@@ -337,7 +330,7 @@ async def download_zip():
         
         # Create the ZIP file with all files in the downloads directory
         with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
-            for file_path in downloads_dir.iterdir():
+            for file_path in DOWNLOADS_DIR.iterdir():
                 if file_path.is_file():
                     # Add file to the ZIP with just the filename (not the full path)
                     zip_file.write(file_path, arcname=file_path.name)
