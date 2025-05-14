@@ -4,7 +4,7 @@
     "icon": "mdi-camera-flip",
     "company": "ArduPilot",
     "version": "0.0.1",
-    "new_page": true,
+    "new_page": false,
     "webpage": "https://github.com/rmackay9/blueos-camera-download",
     "api": ""
 }
