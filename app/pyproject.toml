@@ -1,6 +1,6 @@
 [project]
 name = "blueos-camera-download-extension"
-version = "0.0.1"
+version = "0.0.2"
 description = "BlueOS Camera Download Extension"
 classifiers = [
     "Programming Language :: Python :: 3",
