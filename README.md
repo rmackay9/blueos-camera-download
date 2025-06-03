@@ -37,9 +37,9 @@ To manually install the extension in BlueOS
   },
   "HostConfig": {
     "Binds":[
-      "/usr/blueos/extensions/YOURDOCKERHUBUSER.YOURDOCKERHUBREPO/downloads:/app/downloads",
-      "/usr/blueos/extensions/YOURDOCKERHUBUSER.YOURDOCKERHUBREPO/settings:/app/settings",
-      "/usr/blueos/extensions/YOURDOCKERHUBUSER.YOURDOCKERHUBREPO/logs:/app/logs"
+      "/usr/blueos/extensions/camera-download/downloads:/app/downloads",
+      "/usr/blueos/extensions/camera-download/settings:/app/settings",
+      "/usr/blueos/extensions/camera-download/logs:/app/logs"
       ],
     "PortBindings": {
       "8000/tcp": [
