@@ -23,9 +23,9 @@ LABEL permissions='\
   },\
   "HostConfig": {\
     "Binds":[\
-      "/usr/blueos/extensions/$IMAGE_NAME/downloads:/app/downloads",\
-      "/usr/blueos/extensions/$IMAGE_NAME/settings:/app/settings",\
-      "/usr/blueos/extensions/$IMAGE_NAME/logs:/app/logs"\
+      "/usr/blueos/extensions/camera-download/downloads:/app/downloads",\
+      "/usr/blueos/extensions/camera-download/settings:/app/settings",\
+      "/usr/blueos/extensions/camera-download/logs:/app/logs"\
     ],\
     "ExtraHosts": ["host.docker.internal:host-gateway"],\
     "PortBindings": {\
