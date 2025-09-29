@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm AS builder
 
 # Install ping utility and other required packages
 RUN apt-get update && \
