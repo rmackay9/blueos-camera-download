@@ -51,10 +51,22 @@ def get_filelist_url(ip_address, media_type, dir_path):
 
 
 # download files from camera
-def download_files(ip_address, dest_dir):
+def download_files(ip_address, dest_dir, download_images=True, download_videos=True):
 
-    # repeat for images and videos
-    for media_type in [mt.value for mt in MediaTypes]:
+    # determine which media types to download based on flags
+    media_types_to_download = []
+    if download_images:
+        media_types_to_download.append(MediaTypes.IMAGE.value)
+    if download_videos:
+        media_types_to_download.append(MediaTypes.VIDEO.value)
+
+    # if nothing is selected, skip download
+    if not media_types_to_download:
+        print(prefix_str + "no file types selected for download")
+        return
+
+    # repeat for selected media types
+    for media_type in media_types_to_download:
 
         # display output to user
         print(prefix_str + f"downloading {MEDIA_TYPE_STR[media_type]} files")
@@ -130,14 +142,26 @@ def main():
     parser = ArgumentParser(description=__doc__)
     parser.add_argument("--ipaddr", default=ip_address_default, help="IP address of camera")
     parser.add_argument("--dest", default=".", help="destination directory where downloaded files will be saved")
+    parser.add_argument("--images", action="store_true", default=False, help="download image files")
+    parser.add_argument("--videos", action="store_true", default=False, help="download video files")
+    parser.add_argument("--all", action="store_true", default=False, help="download all file types")
     args = parser.parse_args()
 
     # check destination directory exists
     if not os.path.exists(args.dest):
         exit(prefix_str + "invalid destination directory")
 
+    # determine what file types to download
+    download_images = args.images or args.all
+    download_videos = args.videos or args.all
+
+    # if no specific types selected, default to all
+    if not (args.images or args.videos or args.all):
+        download_images = True
+        download_videos = True
+
     # download files
-    download_files(args.ipaddr, args.dest)
+    download_files(args.ipaddr, args.dest, download_images, download_videos)
 
 
 # main
