@@ -66,13 +66,36 @@ def main():
     parser = ArgumentParser(description="Download files from an XFRobot camera")
     parser.add_argument("--ipaddr", default=ip_address_default, help="IP address of camera")
     parser.add_argument("--dest", default=".", help="Destination directory")
+    parser.add_argument("--images", action="store_true", default=False, help="download image files")
+    parser.add_argument("--videos", action="store_true", default=False, help="download video files")
+    parser.add_argument("--all", action="store_true", default=False, help="download all file types")
     args = parser.parse_args()
 
     if not os.path.exists(args.dest):
         print(prefix_str + "Invalid destination directory")
         return
 
-    for media_type, subdir in MEDIA_DIRS.items():
+    # determine what file types to download
+    download_images = args.images or args.all
+    download_videos = args.videos or args.all
+
+    # if no specific types selected, default to all
+    if not (args.images or args.videos or args.all):
+        download_images = True
+        download_videos = True
+
+    # determine which media types to download
+    media_types_to_download = {}
+    if download_images:
+        media_types_to_download["image"] = MEDIA_DIRS["image"]
+    if download_videos:
+        media_types_to_download["video"] = MEDIA_DIRS["video"]
+
+    if not media_types_to_download:
+        print(prefix_str + "no file types selected for download")
+        return
+
+    for media_type, subdir in media_types_to_download.items():
         print(prefix_str + f"Fetching {media_type} files")
         base_url = f"http://{args.ipaddr}/static/{subdir}/"
         links = extract_file_links(base_url)
