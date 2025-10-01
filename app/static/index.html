@@ -137,6 +137,25 @@
                 color: #fff;
                 background-color: #0088CC;
             }
+            .file-type-filters {
+                display: flex;
+                flex-direction: row;
+                gap: 20px;
+                align-items: center;
+            }
+            .filter-checkbox {
+                display: flex;
+                align-items: center;
+                cursor: pointer;
+                font-size: 0.9em;
+            }
+            .filter-checkbox input[type="checkbox"] {
+                margin-right: 8px;
+                transform: scale(1.1);
+            }
+            .filter-checkbox span {
+                user-select: none;
+            }
         </style>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
               integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
@@ -162,6 +181,26 @@
                         <label for="ipAddress" class="col-form-label">IP Address:</label>
                         <div class="col-sm-9">
                             <input type="text" class="form-control" id="ipAddress" value="192.168.144.25">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <!-- File Type Filters -->
+                        <label class="col-form-label">Download Types:</label>
+                        <div class="col-sm-9">
+                            <div class="file-type-filters">
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" id="downloadAll" checked>
+                                    <span>All Files</span>
+                                </label>
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" id="downloadImages">
+                                    <span>Images</span>
+                                </label>
+                                <label class="filter-checkbox">
+                                    <input type="checkbox" id="downloadVideos">
+                                    <span>Videos</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -242,6 +281,15 @@
                 // Delete all files button event listener
                 const deleteFilesBtn = document.getElementById('deleteFilesBtn');
                 deleteFilesBtn.addEventListener('click', deleteAllFiles);
+
+                // File type filter checkbox event listeners
+                const downloadAllCheckbox = document.getElementById('downloadAll');
+                const downloadImagesCheckbox = document.getElementById('downloadImages');
+                const downloadVideosCheckbox = document.getElementById('downloadVideos');
+
+                downloadAllCheckbox.addEventListener('change', handleAllCheckboxChange);
+                downloadImagesCheckbox.addEventListener('change', handleIndividualCheckboxChange);
+                downloadVideosCheckbox.addEventListener('change', handleIndividualCheckboxChange);
 
                 // Load saved settings and initialise file counts
                 loadSavedSettings();
@@ -343,9 +391,31 @@
                     const cameraType = cameraTypeSelect.value;
                     const ipAddress = ipAddressInput.value;
 
+                    // Get file type selections
+                    const downloadAll = document.getElementById('downloadAll').checked;
+                    const downloadImages = document.getElementById('downloadImages').checked;
+                    const downloadVideos = document.getElementById('downloadVideos').checked;
+
+                    // Determine what to download
+                    let actualDownloadImages = downloadAll || downloadImages;
+                    let actualDownloadVideos = downloadAll || downloadVideos;
+
+                    // Validate that at least one type is selected
+                    if (!actualDownloadImages && !actualDownloadVideos) {
+                        progressLog.value = 'Error: Please select at least one file type to download\n';
+                        progressLog.scrollTop = progressLog.scrollHeight;
+                        return;
+                    }
+
+                    // Build file types description for user feedback
+                    let fileTypesDescription = [];
+                    if (actualDownloadImages) fileTypesDescription.push('images');
+                    if (actualDownloadVideos) fileTypesDescription.push('videos');
+                    const fileTypesStr = fileTypesDescription.join(' and ');
+
                     // Log and update user
-                    console.log(`Download button clicked for ${cameraType} camera at ${ipAddress}`);
-                    progressLog.value = `Starting download from ${cameraType} camera at ${ipAddress}\n`;
+                    console.log(`Download button clicked for ${cameraType} camera at ${ipAddress} (${fileTypesStr})`);
+                    progressLog.value = `Starting ${fileTypesStr} download from ${cameraType} camera at ${ipAddress}\n`;
                     progressLog.scrollTop = progressLog.scrollHeight;
 
                     // Setup event source for progress updates
@@ -354,8 +424,11 @@
                         window.eventSource.close();
                     }
 
+                    // Build URL with file type parameters
+                    const downloadUrl = `/camera/download?type=${cameraType}&ip=${ipAddress}&download_images=${actualDownloadImages}&download_videos=${actualDownloadVideos}`;
+
                     // POST request to download images/videos
-                    fetch(`/camera/download?type=${cameraType}&ip=${ipAddress}`, { method: 'POST' })
+                    fetch(downloadUrl, { method: 'POST' })
                         .then(response => {
                             if (!response.ok) {
                                 throw new Error(`Server responded with status: ${response.status}`);
@@ -491,6 +564,36 @@
                             progressLog.scrollTop = progressLog.scrollHeight;
                             console.error('Error:', error);
                         });
+                }
+
+                // Handle "All" checkbox change
+                function handleAllCheckboxChange() {
+                    const downloadAllCheckbox = document.getElementById('downloadAll');
+                    const downloadImagesCheckbox = document.getElementById('downloadImages');
+                    const downloadVideosCheckbox = document.getElementById('downloadVideos');
+
+                    if (downloadAllCheckbox.checked) {
+                        // When "All" is checked, uncheck individual checkboxes
+                        downloadImagesCheckbox.checked = false;
+                        downloadVideosCheckbox.checked = false;
+                    }
+                }
+
+                // Handle individual checkbox changes
+                function handleIndividualCheckboxChange() {
+                    const downloadAllCheckbox = document.getElementById('downloadAll');
+                    const downloadImagesCheckbox = document.getElementById('downloadImages');
+                    const downloadVideosCheckbox = document.getElementById('downloadVideos');
+
+                    if (downloadImagesCheckbox.checked || downloadVideosCheckbox.checked) {
+                        // When any individual checkbox is checked, uncheck "All"
+                        downloadAllCheckbox.checked = false;
+                    }
+
+                    // If no individual checkboxes are selected, default to "All"
+                    if (!downloadImagesCheckbox.checked && !downloadVideosCheckbox.checked) {
+                        downloadAllCheckbox.checked = true;
+                    }
                 }
             });
         </script>
