@@ -9,7 +9,7 @@
     - Download Images/Videos button to start the download process
     - Image and Video file counts
     - Refresh button to update the above file counts
-    - Download ZIP button to download all files as a ZIP archive
+    - Browse Files button to open BlueOS file browser for downloaded files
     - Delete All button to delete all downloaded files
     - Progress text area to display the status of the latest action
 
@@ -222,9 +222,9 @@
                                 <button id="refreshCountsBtn" class="btn btn-sm btn-outline-secondary">
                                     <i class="fas fa-sync-alt"></i> Refresh
                                 </button>
-                                <!-- Download Zip button -->
-                                <button id="downloadZipBtn" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-download"></i> Download ZIP
+                                <!-- Browse Files button -->
+                                <button id="browseFilesBtn" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-folder-open"></i> Browse Files
                                 </button>
                                 <!-- Delete All Files button -->
                                 <button id="deleteFilesBtn" class="btn btn-sm btn-outline-danger">
@@ -274,9 +274,9 @@
                 const refreshCountsBtn = document.getElementById('refreshCountsBtn');
                 refreshCountsBtn.addEventListener('click', updateFileCounts);
 
-                // Download ZIP button event listener
-                const downloadZipBtn = document.getElementById('downloadZipBtn');
-                downloadZipBtn.addEventListener('click', downloadZip);
+                // Browse Files button event listener
+                const browseFilesBtn = document.getElementById('browseFilesBtn');
+                browseFilesBtn.addEventListener('click', browseFiles);
 
                 // Delete all files button event listener
                 const deleteFilesBtn = document.getElementById('deleteFilesBtn');
@@ -504,33 +504,28 @@
                         });
                 }
 
-                // Function to download ZIP
-                function downloadZip() {
-                    // Check if there are any files to download first
+                // Browse Files function
+                function browseFiles() {
+                    // Check if there are any files to browse first
                     fetch('/camera/count-files', { method: 'POST' })
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {
                                 const totalFiles = data.images + data.videos;
                                 if (totalFiles > 0) {
-                                    // files are available, proceed with download
-                                    // create a form element.  This will momentarily open in a new tab before closing
-                                    const downloadzip_form = document.createElement('form');
-                                    downloadzip_form.method = 'POST';
-                                    downloadzip_form.action = '/camera/download-zip';
-                                    downloadzip_form.target = '_blank';
+                                    // files are available, open BlueOS file browser
+                                    // Construct the absolute URL to the file browser (without port)
+                                    const currentHost = window.location.hostname;
+                                    const protocol = window.location.protocol;
+                                    const fileBrowserUrl = `${protocol}//${currentHost}/file-browser/files/extensions/camera-download/downloads/`;
 
-                                    // add the form to the document, submit it, and remove it
-                                    document.body.appendChild(downloadzip_form);
-                                    downloadzip_form.submit();
-                                    document.body.removeChild(downloadzip_form);
-
-                                    // update user
-                                    progressLog.value = "ZIP download started. Check your browser's download manager\n";
+                                    // Open in new tab
+                                    window.open(fileBrowserUrl, '_blank');                                    // update user
+                                    progressLog.value = "Opening BlueOS file browser for downloaded files\n";
                                     progressLog.scrollTop = progressLog.scrollHeight;
                                 } else {
                                     // No files available, show message in progress log
-                                    progressLog.value = "No files available to download. Please download files from the camera first";
+                                    progressLog.value = "No files available to browse. Please download files from the camera first\n";
                                     progressLog.scrollTop = progressLog.scrollHeight;
                                 }
                             } else {
@@ -540,7 +535,7 @@
                             }
                         })
                         .catch(error => {
-                            progressLog.value += `Error checking for files to download: ${error}\n`;
+                            progressLog.value += `Error checking for files: ${error}\n`;
                             progressLog.scrollTop = progressLog.scrollHeight;
                         });
                 }
