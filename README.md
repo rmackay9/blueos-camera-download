@@ -15,7 +15,7 @@ Push the "Download" button to download images and videos from the camera gimbal.
 To build and publish for Ubuntu, RPI3, RPI4, RPI5
 
 - Open docker desktop (required only on Windows WSL2 machines)
-- docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 . -t YOURDOCKERHUBUSER/YOURDOCKERHUBREPO:latest --output type=registry
+- docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 . -t YOURDOCKERHUBUSER/blueos-camera-download:latest --output type=registry
 - login to https://hub.docker.com/repositories/ and confirm the image has appeared
 
 To manually install the extension in BlueOS
