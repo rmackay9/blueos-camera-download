@@ -128,18 +128,18 @@ async def ping_camera(ip: str) -> Dict[str, Any]:
 
 # download images and video files from camera
 @app.post("/camera/download")
-async def download_images(type: str, ip: str):
+async def download_images(type: str, ip: str, download_images: bool = True, download_videos: bool = True):
     """Download images from camera based on type and IP address"""
     return StreamingResponse(
-        download_generator(type, ip),
+        download_generator(type, ip, download_images, download_videos),
         media_type="text/event-stream"
     )
 
 
 # download image generator function for streaming progress to the frontend
-async def download_generator(type: str, ip: str):
+async def download_generator(type: str, ip: str, download_images: bool = True, download_videos: bool = True):
     """Generator function for streaming download progress"""
-    logger.info(f"Download request received for {type} camera at {ip}")
+    logger.info(f"Download request received for {type} camera at {ip} (images: {download_images}, videos: {download_videos})")
 
     # Save the camera settings when a download is requested
     settings.update_camera_ip(type, ip)
@@ -167,11 +167,31 @@ async def download_generator(type: str, ip: str):
             yield f"data: Error: download script for {type} camera not found\n\n"
             return
 
-        # Build command
-        cmd = f"python3 {script_path} --ipaddr {ip} --dest {DOWNLOADS_DIR}"
+        # Build command with file type filters
+        cmd_parts = [f"python3 {script_path}", f"--ipaddr {ip}", f"--dest {DOWNLOADS_DIR}"]
+
+        # Add filter arguments based on selections
+        if download_images and download_videos:
+            cmd_parts.append("--all")
+        elif download_images:
+            cmd_parts.append("--images")
+        elif download_videos:
+            cmd_parts.append("--videos")
+        else:
+            yield f"data: Error: No file types selected for download\n\n"
+            return
+
+        cmd = " ".join(cmd_parts)
 
         # display download started message
-        yield f"data: Started download from {type} camera at {ip}\n\n"
+        file_types = []
+        if download_images:
+            file_types.append("images")
+        if download_videos:
+            file_types.append("videos")
+        file_types_str = " and ".join(file_types)
+
+        yield f"data: Started downloading {file_types_str} from {type} camera at {ip}\n\n"
         yield f"data: This may take a while depending on the number of files...\n\n"
         yield f"data: Files will be saved to: {DOWNLOADS_DIR}\n\n"
 
