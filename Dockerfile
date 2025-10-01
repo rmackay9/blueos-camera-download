@@ -12,7 +12,7 @@ RUN python -m pip install /app --extra-index-url https://www.piwheels.org/simple
 EXPOSE 8000/tcp
 
 # application version.  This should match the register_service file's version
-LABEL version="0.0.2"
+LABEL version="0.0.3"
 
 # Permissions for the container
 # "Binds" section maps the host PC directories to the application directories
