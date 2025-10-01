@@ -6,15 +6,12 @@
 # - Ping camera
 # - Download images and videos from camera
 # - Count files in the downloads directory
-# - Download all files as a ZIP archive
 # - Delete all files in the downloads directory
 
 import logging.handlers
 import subprocess
 import asyncio
 import sys
-import zipfile
-import io
 from datetime import datetime
 from pathlib import Path
 from fastapi import FastAPI
@@ -300,51 +297,6 @@ async def count_files() -> Dict[str, Any]:
             "images": 0,
             "videos": 0
         }
-
-
-# download ZIP file of all image and video files in the downloads directory
-@app.post("/camera/download-zip")
-async def download_zip(request_token: str = None):
-    """Create a ZIP archive of all files in the downloads directory and serve it for download"""
-    logger.info("Creating ZIP archive of all downloaded files")
-
-    try:
-        if not DOWNLOADS_DIR.exists() or not any(DOWNLOADS_DIR.iterdir()):
-            return JSONResponse(
-                status_code=404,
-                content={"success": False, "message": "No files available to download"}
-            )
-
-        # Create a ZIP file in memory
-        zip_buffer = io.BytesIO()
-
-        # Get current date for the filename
-        current_date = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"camera_files_{current_date}.zip"
-
-        # Create the ZIP file with all files in the downloads directory
-        with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
-            for file_path in DOWNLOADS_DIR.iterdir():
-                if file_path.is_file():
-                    # Add file to the ZIP with just the filename (not the full path)
-                    zip_file.write(file_path, arcname=file_path.name)
-
-        # Reset buffer position to the beginning
-        zip_buffer.seek(0)
-
-        # Return the ZIP file as a downloadable response
-        return StreamingResponse(
-            zip_buffer,
-            media_type="application/zip",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
-        )
-
-    except Exception as e:
-        logger.exception(f"Error creating ZIP archive: {str(e)}")
-        return JSONResponse(
-            status_code=500,
-            content={"success": False, "message": f"Error creating ZIP archive: {str(e)}"}
-        )
 
 
 # delete all files in the downloads directory
